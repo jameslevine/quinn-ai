@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 
-export const usersRouter = Router();
+export const usersRouter: Router = Router();
 
 // GET /users/me - Get current user profile
 usersRouter.get("/me", async (req: Request, res: Response) => {

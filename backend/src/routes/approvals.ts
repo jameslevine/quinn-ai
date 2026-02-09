@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 
-export const approvalsRouter = Router();
+export const approvalsRouter: Router = Router();
 
 // GET /approvals - List pending approvals
 approvalsRouter.get("/", async (req: Request, res: Response) => {
@@ -15,12 +15,10 @@ approvalsRouter.get("/", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: { code: "INTERNAL_ERROR", message: "Failed to fetch approvals" },
-      });
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Failed to fetch approvals" },
+    });
   }
 });
 
@@ -37,12 +35,10 @@ approvalsRouter.get("/:approvalId", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: { code: "INTERNAL_ERROR", message: "Failed to fetch approval" },
-      });
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Failed to fetch approval" },
+    });
   }
 });
 
@@ -60,11 +56,9 @@ approvalsRouter.post("/:approvalId/respond", async (req: Request, res: Response)
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: { code: "INTERNAL_ERROR", message: "Failed to respond to approval" },
-      });
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Failed to respond to approval" },
+    });
   }
 });

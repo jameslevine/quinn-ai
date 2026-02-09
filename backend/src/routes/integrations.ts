@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 
-export const integrationsRouter = Router();
+export const integrationsRouter: Router = Router();
 
 // GET /integrations - List user integrations
 integrationsRouter.get("/", async (req: Request, res: Response) => {
@@ -14,12 +14,10 @@ integrationsRouter.get("/", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: { code: "INTERNAL_ERROR", message: "Failed to fetch integrations" },
-      });
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Failed to fetch integrations" },
+    });
   }
 });
 
@@ -37,12 +35,10 @@ integrationsRouter.post("/:provider/connect", async (req: Request, res: Response
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: { code: "INTERNAL_ERROR", message: "Failed to initiate connection" },
-      });
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Failed to initiate connection" },
+    });
   }
 });
 
@@ -59,12 +55,10 @@ integrationsRouter.post("/:provider/callback", async (req: Request, res: Respons
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: { code: "INTERNAL_ERROR", message: "Failed to complete connection" },
-      });
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Failed to complete connection" },
+    });
   }
 });
 

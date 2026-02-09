@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 
-export const emailsRouter = Router();
+export const emailsRouter: Router = Router();
 
 // GET /emails - List cached emails
 emailsRouter.get("/", async (req: Request, res: Response) => {
@@ -15,12 +15,10 @@ emailsRouter.get("/", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: { code: "INTERNAL_ERROR", message: "Failed to fetch emails" },
-      });
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Failed to fetch emails" },
+    });
   }
 });
 
@@ -37,12 +35,10 @@ emailsRouter.get("/:emailId", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: { code: "INTERNAL_ERROR", message: "Failed to fetch email" },
-      });
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Failed to fetch email" },
+    });
   }
 });
 
@@ -60,12 +56,10 @@ emailsRouter.post("/:emailId/draft-reply", async (req: Request, res: Response) =
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: { code: "INTERNAL_ERROR", message: "Failed to generate draft" },
-      });
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Failed to generate draft" },
+    });
   }
 });
 

@@ -28,38 +28,54 @@ const getVerifier = () => {
   return verifier;
 };
 
-export const cognitoAuthMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+export const cognitoAuthMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: {
           code: "UNAUTHORIZED",
           message: "No token provided",
         },
       });
+      return;
     }
 
     const token = authHeader.split(" ")[1];
+
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Invalid token format",
+        },
+      });
+      return;
+    }
 
     try {
       const payload = await getVerifier().verify(token);
       req.user = {
         sub: payload.sub,
-        email: payload.email as string,
-        ...payload,
+        email: (payload.email as string) || "",
       };
       next();
     } catch (err) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: {
           code: "UNAUTHORIZED",
           message: "Invalid token",
         },
       });
+      return;
     }
   } catch (err) {
     next(err);

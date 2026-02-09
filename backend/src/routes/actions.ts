@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 
-export const actionsRouter = Router();
+export const actionsRouter: Router = Router();
 
 // GET /actions - List user actions
 actionsRouter.get("/", async (req: Request, res: Response) => {
@@ -16,12 +16,10 @@ actionsRouter.get("/", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: { code: "INTERNAL_ERROR", message: "Failed to fetch actions" },
-      });
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Failed to fetch actions" },
+    });
   }
 });
 
@@ -39,12 +37,10 @@ actionsRouter.get("/:actionId", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: { code: "INTERNAL_ERROR", message: "Failed to fetch action" },
-      });
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Failed to fetch action" },
+    });
   }
 });
 
@@ -61,12 +57,10 @@ actionsRouter.post("/", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: { code: "INTERNAL_ERROR", message: "Failed to create action" },
-      });
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Failed to create action" },
+    });
   }
 });
 
@@ -84,11 +78,9 @@ actionsRouter.delete("/:actionId", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: { code: "INTERNAL_ERROR", message: "Failed to cancel action" },
-      });
+    res.status(500).json({
+      success: false,
+      error: { code: "INTERNAL_ERROR", message: "Failed to cancel action" },
+    });
   }
 });
