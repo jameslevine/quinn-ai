@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quinn - AI Personal Assistant</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+      }
+      .container {
+        text-align: center;
+        padding: 2rem;
+        max-width: 600px;
+      }
+      .logo {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+      }
+      h1 {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+      }
+      .tagline {
+        font-size: 1.25rem;
+        opacity: 0.9;
+        margin-bottom: 2rem;
+      }
+      .status {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+      }
+      .status-badge {
+        display: inline-block;
+        background: #10b981;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+      .features {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-top: 2rem;
+      }
+      .feature {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 1rem;
+        border-radius: 8px;
+      }
+      .feature-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+      }
+      .feature-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+      }
+      .feature-desc {
+        font-size: 0.875rem;
+        opacity: 0.8;
+      }
+      .footer {
+        margin-top: 3rem;
+        opacity: 0.7;
+        font-size: 0.875rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="logo">🤖</div>
+      <h1>Quinn</h1>
+      <p class="tagline">Your AI Personal Assistant that actually DOES things</p>
+
+      <div class="status">
+        <span class="status-badge">✓ Infrastructure Ready</span>
+        <p>Backend API and authentication are deployed and operational.</p>
+      </div>
+
+      <div class="features">
+        <div class="feature">
+          <div class="feature-icon">📧</div>
+          <div class="feature-title">Email Management</div>
+          <div class="feature-desc">Draft and send emails on your behalf</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">📞</div>
+          <div class="feature-title">Phone Calls</div>
+          <div class="feature-desc">Make calls and book appointments</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">💰</div>
+          <div class="feature-title">Budget & Bills</div>
+          <div class="feature-desc">Manage finances and pay bills</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🍕</div>
+          <div class="feature-title">Food & Groceries</div>
+          <div class="feature-desc">Order meals and groceries</div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>Full frontend coming soon • Phase 1 in development</p>
+      </div>
+    </div>
+  </body>
+</html>
