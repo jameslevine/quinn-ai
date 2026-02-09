@@ -1,0 +1,17 @@
+# SAM CLI Configuration
+
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "quinn-dev"
+resolve_s3 = true
+s3_prefix = "quinn-dev"
+region = "eu-west-2"
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "Environment=dev"
+disable_rollback = false
+
+[default.build.parameters]
+cached = true
+parallel = true
