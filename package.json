@@ -1,0 +1,64 @@
+{
+  "name": "quinn",
+  "version": "0.1.0",
+  "description": "Quinn - AI Personal Assistant that actually does things",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "mobile",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:mobile": "npm run start --workspace=mobile",
+    "build": "npm run build --workspaces",
+    "build:backend": "npm run build --workspace=backend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build:mobile": "npm run build --workspace=mobile",
+    "test": "npm run test --workspaces --if-present",
+    "test:backend": "npm run test --workspace=backend",
+    "test:frontend": "npm run test --workspace=frontend",
+    "test:mobile": "npm run test --workspace=mobile",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:fix": "npm run lint:fix --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yaml,yml}\"",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "prepare": "husky",
+    "deploy:dev": "cd infrastructure && sam deploy --config-env dev",
+    "deploy:prod": "cd infrastructure && sam deploy --config-env prod",
+    "clean": "rm -rf node_modules backend/node_modules frontend/node_modules mobile/node_modules shared/node_modules"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "@types/node": "^20.11.0",
+    "concurrently": "^8.2.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.2.0",
+    "typescript": "^5.3.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/quinn.git"
+  },
+  "author": "Quinn Team",
+  "license": "UNLICENSED"
+}
