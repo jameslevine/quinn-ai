@@ -2,4 +2,3 @@ packages:
   - "shared"
   - "backend"
   - "frontend"
-  - "mobile"
