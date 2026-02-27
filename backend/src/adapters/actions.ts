@@ -214,3 +214,8 @@ export const getDbPendingActionsCount = async (userId: string): Promise<number> 
   const actions = await getDbActionsByStatus(userId, "pending", 100);
   return actions.length;
 };
+
+// Get pending actions for user (alias for getDbActionsByStatus with pending status)
+export const getDbPendingActionsByUserId = async (userId: string): Promise<Action[]> => {
+  return getDbActionsByStatus(userId, "pending", 50);
+};

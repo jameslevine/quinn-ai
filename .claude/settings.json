@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install)",
+      "Bash(pnpm --filter backend *)",
+      "Bash(pnpm --filter frontend *)",
+      "Bash(pnpm run *)",
+      "Bash(npx *)",
+      "Bash(sam build *)",
+      "Bash(sam validate *)"
+    ],
+    "deny": [
+      "Read(.env.local)",
+      "Read(.env)",
+      "Read(frontend/.env)",
+      "Read(**/.env.*)"
+    ]
+  }
+}

@@ -1,0 +1,100 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Quinn - Amazon Connect Contact Flow with Lex Bot (Nested Stack)
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Environment name
+
+  ConnectInstanceArn:
+    Type: String
+    Description: Amazon Connect Instance ARN
+
+  LexBotId:
+    Type: String
+    Description: Lex Bot ID
+
+  LexBotAliasId:
+    Type: String
+    Description: Lex Bot Alias ID
+
+Resources:
+  # ============================================
+  # AMAZON CONNECT - Contact Flow with Lex Bot
+  # ============================================
+
+  # Outbound contact flow with Lex bot for 2-way AI conversation
+  # Flow: Greeting -> Lex Bot (continuous conversation) -> Disconnect
+  OutboundContactFlow:
+    Type: AWS::Connect::ContactFlow
+    Properties:
+      InstanceArn: !Ref ConnectInstanceArn
+      Name: !Sub quinn-outbound-flow-${Environment}
+      Description: Outbound contact flow for Quinn AI calls with 2-way Lex bot conversation
+      Type: CONTACT_FLOW
+      State: ACTIVE
+      Content: !Sub |
+        {
+          "Version": "2019-10-30",
+          "StartAction": "greeting-action",
+          "Metadata": {
+            "entryPointPosition": {"x": 40, "y": 40},
+            "ActionMetadata": {
+              "greeting-action": {"position": {"x": 160, "y": 40}},
+              "lex-bot-action": {"position": {"x": 360, "y": 40}},
+              "disconnect-action": {"position": {"x": 560, "y": 40}}
+            }
+          },
+          "Actions": [
+            {
+              "Identifier": "greeting-action",
+              "Type": "MessageParticipant",
+              "Parameters": {
+                "Text": "$.Attributes.message"
+              },
+              "Transitions": {
+                "NextAction": "lex-bot-action",
+                "Errors": [
+                  {"NextAction": "lex-bot-action", "ErrorType": "NoMatchingError"}
+                ]
+              }
+            },
+            {
+              "Identifier": "lex-bot-action",
+              "Type": "ConnectParticipantWithLexBot",
+              "Parameters": {
+                "LexBot": {
+                  "Name": "quinn-bot-${Environment}",
+                  "Region": "${AWS::Region}",
+                  "AliasArn": "arn:aws:lex:${AWS::Region}:${AWS::AccountId}:bot-alias/${LexBotId}/${LexBotAliasId}"
+                },
+                "LexSessionAttributes": {
+                  "callPurpose": "$.Attributes.callPurpose",
+                  "callerName": "$.Attributes.callerName",
+                  "targetBusiness": "$.Attributes.targetBusiness"
+                }
+              },
+              "Transitions": {
+                "NextAction": "disconnect-action",
+                "Errors": [
+                  {"NextAction": "disconnect-action", "ErrorType": "NoMatchingError"}
+                ]
+              }
+            },
+            {
+              "Identifier": "disconnect-action",
+              "Type": "DisconnectParticipant",
+              "Parameters": {},
+              "Transitions": {}
+            }
+          ]
+        }
+
+Outputs:
+  ContactFlowArn:
+    Description: Amazon Connect Contact Flow ARN
+    Value: !GetAtt OutboundContactFlow.ContactFlowArn
+
+  ContactFlowId:
+    Description: Amazon Connect Contact Flow ID
+    Value: !Select [5, !Split ["/", !GetAtt OutboundContactFlow.ContactFlowArn]]

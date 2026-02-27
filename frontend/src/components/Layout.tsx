@@ -25,6 +25,13 @@ import {
     Dashboard as DashboardIcon,
     PlayArrow as ActionsIcon,
     CheckCircle as ApprovalsIcon,
+    Email as EmailIcon,
+    AccountBalance as BankingIcon,
+    Restaurant as FoodIcon,
+    EventNote as LifeIcon,
+    SmartToy as ChatIcon,
+    Phone as CallsIcon,
+    CalendarMonth as CalendarIcon,
     Settings as SettingsIcon,
     DarkMode as DarkModeIcon,
     LightMode as LightModeIcon,
@@ -42,8 +49,15 @@ interface LayoutProps {
 
 const menuItems = [
     { text: "Dashboard", icon: <DashboardIcon />, path: "/" },
+    { text: "Chat with Quinn", icon: <ChatIcon />, path: "/chat" },
     { text: "Actions", icon: <ActionsIcon />, path: "/actions" },
     { text: "Approvals", icon: <ApprovalsIcon />, path: "/approvals" },
+    { text: "Emails", icon: <EmailIcon />, path: "/emails" },
+    { text: "Calendar", icon: <CalendarIcon />, path: "/calendar" },
+    { text: "Banking", icon: <BankingIcon />, path: "/banking" },
+    { text: "Food", icon: <FoodIcon />, path: "/food" },
+    { text: "Life", icon: <LifeIcon />, path: "/life" },
+    { text: "Phone Calls", icon: <CallsIcon />, path: "/calls" },
     { text: "Settings", icon: <SettingsIcon />, path: "/settings" },
 ];
 

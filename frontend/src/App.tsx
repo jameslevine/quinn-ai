@@ -13,6 +13,13 @@ import { useStore } from "./store";
 import Dashboard from "./pages/Dashboard";
 import Actions from "./pages/Actions";
 import Approvals from "./pages/Approvals";
+import Emails from "./pages/Emails";
+import Banking from "./pages/Banking";
+import Food from "./pages/Food";
+import Life from "./pages/Life";
+import Chat from "./pages/Chat";
+import Calls from "./pages/Calls";
+import Calendar from "./pages/Calendar";
 import Settings from "./pages/Settings";
 import Layout from "./components/Layout";
 
@@ -92,6 +99,13 @@ function App() {
                   <Route index element={<Dashboard />} />
                   <Route path="actions" element={<Actions />} />
                   <Route path="approvals" element={<Approvals />} />
+                  <Route path="emails" element={<Emails />} />
+                  <Route path="banking" element={<Banking />} />
+                  <Route path="food" element={<Food />} />
+                  <Route path="life" element={<Life />} />
+                  <Route path="chat" element={<Chat />} />
+                  <Route path="calls" element={<Calls />} />
+                  <Route path="calendar" element={<Calendar />} />
                   <Route path="settings" element={<Settings />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>

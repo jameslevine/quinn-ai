@@ -14,6 +14,13 @@ import {
     IconButton,
     TextField,
     InputAdornment,
+    CircularProgress,
+    Alert,
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
 } from "@mui/material";
 import {
     Email as EmailIcon,
@@ -22,107 +29,115 @@ import {
     Restaurant as FoodIcon,
     Search as SearchIcon,
     Visibility as ViewIcon,
+    CheckCircle as ApproveIcon,
+    Cancel as RejectIcon,
+    Event as EventIcon,
+    Task as TaskIcon,
 } from "@mui/icons-material";
+import { useActions, useUpdateActionStatus } from "../hooks/useActions";
+import type { Action, ActionStatus } from "../hooks/useActions";
 
-interface Action {
-    id: string;
-    type: "email" | "call" | "payment" | "food";
-    title: string;
-    description: string;
-    status: "pending" | "completed" | "failed";
-    createdAt: string;
-}
-
-const mockActions: Action[] = [
-    {
-        id: "1",
-        type: "email",
-        title: "Draft reply to John Smith",
-        description: "Re: Meeting follow-up",
-        status: "pending",
-        createdAt: "2026-02-10T08:30:00Z",
-    },
-    {
-        id: "2",
-        type: "call",
-        title: "Book dentist appointment",
-        description: "Annual checkup",
-        status: "completed",
-        createdAt: "2026-02-10T07:15:00Z",
-    },
-    {
-        id: "3",
-        type: "payment",
-        title: "Pay electric bill",
-        description: "£85.00 to British Gas",
-        status: "completed",
-        createdAt: "2026-02-09T14:00:00Z",
-    },
-    {
-        id: "4",
-        type: "food",
-        title: "Order weekly groceries",
-        description: "From Ocado - £67.50",
-        status: "pending",
-        createdAt: "2026-02-09T10:00:00Z",
-    },
-    {
-        id: "5",
-        type: "email",
-        title: "Unsubscribe from newsletters",
-        description: "5 newsletters identified",
-        status: "completed",
-        createdAt: "2026-02-08T16:30:00Z",
-    },
-    {
-        id: "6",
-        type: "call",
-        title: "Negotiate internet bill",
-        description: "Call to BT for better rate",
-        status: "failed",
-        createdAt: "2026-02-08T11:00:00Z",
-    },
-];
-
-const getActionIcon = (type: Action["type"]) => {
+const getActionIcon = (type: string) => {
     switch (type) {
         case "email":
             return <EmailIcon />;
         case "call":
+        case "phone":
             return <PhoneIcon />;
         case "payment":
+        case "banking":
             return <MoneyIcon />;
         case "food":
             return <FoodIcon />;
+        case "calendar":
+        case "event":
+        case "appointment":
+            return <EventIcon />;
+        case "task":
+        case "other":
+        default:
+            return <TaskIcon />;
     }
 };
 
-const getStatusColor = (status: Action["status"]) => {
+const getStatusColor = (status: string): "warning" | "success" | "error" | "info" | "default" => {
     switch (status) {
         case "pending":
             return "warning";
         case "completed":
+        case "approved":
             return "success";
         case "failed":
+        case "rejected":
             return "error";
+        default:
+            return "default";
     }
 };
 
 export default function Actions() {
     const [tabValue, setTabValue] = useState(0);
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedAction, setSelectedAction] = useState<Action | null>(null);
+    const [detailsOpen, setDetailsOpen] = useState(false);
 
-    const filteredActions = mockActions.filter((action) => {
+    const { data: actions, isLoading, error } = useActions();
+    const updateActionStatus = useUpdateActionStatus();
+
+    const actionsList = Array.isArray(actions) ? actions : [];
+
+    const filteredActions = actionsList.filter((action) => {
         const matchesSearch =
-            action.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            action.description.toLowerCase().includes(searchQuery.toLowerCase());
+            action.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            action.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
         if (tabValue === 0) return matchesSearch;
         if (tabValue === 1) return matchesSearch && action.status === "pending";
-        if (tabValue === 2) return matchesSearch && action.status === "completed";
-        if (tabValue === 3) return matchesSearch && action.status === "failed";
+        if (tabValue === 2) return matchesSearch && (action.status === "completed" || action.status === "approved");
+        if (tabValue === 3) return matchesSearch && (action.status === "failed" || action.status === "rejected");
         return matchesSearch;
     });
+
+    const pendingCount = actionsList.filter((a) => a.status === "pending").length;
+    const completedCount = actionsList.filter((a) => a.status === "completed" || a.status === "approved").length;
+    const failedCount = actionsList.filter((a) => a.status === "failed" || a.status === "rejected").length;
+
+    const handleViewDetails = (action: Action) => {
+        setSelectedAction(action);
+        setDetailsOpen(true);
+    };
+
+    const handleApprove = async (actionId: string) => {
+        try {
+            await updateActionStatus.mutateAsync({ actionId, status: "approved" as ActionStatus });
+        } catch (err) {
+            console.error("Failed to approve action:", err);
+        }
+    };
+
+    const handleReject = async (actionId: string) => {
+        try {
+            await updateActionStatus.mutateAsync({ actionId, status: "rejected" as ActionStatus });
+        } catch (err) {
+            console.error("Failed to reject action:", err);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+
+    if (error) {
+        return (
+            <Box sx={{ py: 4 }}>
+                <Alert severity="error">Failed to load actions. Please try again.</Alert>
+            </Box>
+        );
+    }
 
     return (
         <Box>
@@ -159,22 +174,16 @@ export default function Actions() {
                         onChange={(_, newValue) => setTabValue(newValue)}
                         sx={{ mb: 2, borderBottom: 1, borderColor: "divider" }}
                     >
-                        <Tab label={`All (${mockActions.length})`} />
-                        <Tab
-                            label={`Pending (${mockActions.filter((a) => a.status === "pending").length})`}
-                        />
-                        <Tab
-                            label={`Completed (${mockActions.filter((a) => a.status === "completed").length})`}
-                        />
-                        <Tab
-                            label={`Failed (${mockActions.filter((a) => a.status === "failed").length})`}
-                        />
+                        <Tab label={`All (${actionsList.length})`} />
+                        <Tab label={`Pending (${pendingCount})`} />
+                        <Tab label={`Completed (${completedCount})`} />
+                        <Tab label={`Failed (${failedCount})`} />
                     </Tabs>
 
                     <List disablePadding>
                         {filteredActions.map((action) => (
                             <ListItem
-                                key={action.id}
+                                key={action.actionId}
                                 sx={{
                                     px: 0,
                                     borderBottom: "1px solid",
@@ -182,9 +191,31 @@ export default function Actions() {
                                     "&:last-child": { borderBottom: "none" },
                                 }}
                                 secondaryAction={
-                                    <IconButton edge="end">
-                                        <ViewIcon />
-                                    </IconButton>
+                                    <Box sx={{ display: "flex", gap: 1 }}>
+                                        {action.status === "pending" && (
+                                            <>
+                                                <IconButton
+                                                    edge="end"
+                                                    color="success"
+                                                    onClick={() => handleApprove(action.actionId)}
+                                                    disabled={updateActionStatus.isPending}
+                                                >
+                                                    <ApproveIcon />
+                                                </IconButton>
+                                                <IconButton
+                                                    edge="end"
+                                                    color="error"
+                                                    onClick={() => handleReject(action.actionId)}
+                                                    disabled={updateActionStatus.isPending}
+                                                >
+                                                    <RejectIcon />
+                                                </IconButton>
+                                            </>
+                                        )}
+                                        <IconButton edge="end" onClick={() => handleViewDetails(action)}>
+                                            <ViewIcon />
+                                        </IconButton>
+                                    </Box>
                                 }
                             >
                                 <ListItemIcon sx={{ minWidth: 40 }}>
@@ -192,7 +223,16 @@ export default function Actions() {
                                 </ListItemIcon>
                                 <ListItemText
                                     primary={action.title}
-                                    secondary={action.description}
+                                    secondary={
+                                        <Box>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {action.description}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {new Date(action.createdAt).toLocaleString()}
+                                            </Typography>
+                                        </Box>
+                                    }
                                     primaryTypographyProps={{ fontWeight: 500 }}
                                 />
                                 <Chip
@@ -206,13 +246,71 @@ export default function Actions() {
                         {filteredActions.length === 0 && (
                             <Box sx={{ py: 4, textAlign: "center" }}>
                                 <Typography color="text.secondary">
-                                    No actions found matching your criteria.
+                                    {actionsList.length === 0
+                                        ? "No actions yet. Quinn will create actions as you interact with the AI."
+                                        : "No actions found matching your criteria."}
                                 </Typography>
                             </Box>
                         )}
                     </List>
                 </CardContent>
             </Card>
+
+            {/* Action Details Dialog */}
+            <Dialog open={detailsOpen} onClose={() => setDetailsOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Action Details</DialogTitle>
+                <DialogContent>
+                    {selectedAction && (
+                        <Box sx={{ pt: 1 }}>
+                            <Typography variant="h6" gutterBottom>
+                                {selectedAction.title}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" paragraph>
+                                {selectedAction.description}
+                            </Typography>
+                            {selectedAction.details && (
+                                <Typography variant="body2" paragraph>
+                                    {selectedAction.details}
+                                </Typography>
+                            )}
+                            <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+                                <Chip label={selectedAction.type} variant="outlined" />
+                                <Chip
+                                    label={selectedAction.status}
+                                    color={getStatusColor(selectedAction.status)}
+                                />
+                                {selectedAction.amount && (
+                                    <Chip
+                                        label={`${selectedAction.currency || "£"}${selectedAction.amount}`}
+                                        variant="outlined"
+                                    />
+                                )}
+                            </Box>
+                            <Typography variant="caption" color="text.secondary">
+                                Created: {new Date(selectedAction.createdAt).toLocaleString()}
+                            </Typography>
+                            {selectedAction.completedAt && (
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                                    Completed: {new Date(selectedAction.completedAt).toLocaleString()}
+                                </Typography>
+                            )}
+                            {selectedAction.metadata && Object.keys(selectedAction.metadata).length > 0 && (
+                                <Box sx={{ mt: 2 }}>
+                                    <Typography variant="subtitle2" gutterBottom>
+                                        Additional Details
+                                    </Typography>
+                                    <pre style={{ fontSize: "12px", overflow: "auto", background: "#f5f5f5", padding: "8px", borderRadius: "4px" }}>
+                                        {JSON.stringify(selectedAction.metadata, null, 2)}
+                                    </pre>
+                                </Box>
+                            )}
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDetailsOpen(false)}>Close</Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }

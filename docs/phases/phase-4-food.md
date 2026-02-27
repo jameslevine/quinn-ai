@@ -1,401 +1,327 @@
-# Phase 4: Food (Weeks 21-26)
+# Phase 4: Food Management ✅ COMPLETE
 
 ## Overview
 
-Phase 4 adds food management capabilities, enabling Quinn to plan meals, order groceries, and handle food delivery.
+Phase 4 added comprehensive food management capabilities including recipes, meal planning, grocery lists, and food ordering.
 
-## Goals
-
-1. Build meal planning with recipe suggestions
-2. Integrate grocery delivery services (Ocado, Tesco)
-3. Connect food delivery apps (Deliveroo, Uber Eats)
-4. Implement dietary preference handling
-5. Add nutrition tracking
+**Status:** ✅ Complete  
+**Completed:** February 2026
 
 ---
 
-## Week 21-22: Meal Planning
+## What Was Built
 
-### Objectives
+### Backend Components
 
-- Build recipe database integration
-- Implement meal plan generation
-- Handle dietary preferences and restrictions
-- Create shopping list generation
-
-### Deliverables
-
-#### 4.1 Recipe Service
+#### Food Adapter (`backend/src/adapters/food.ts`)
 
 ```typescript
-interface RecipeService {
-  // Search
-  searchRecipes(query: string, filters: RecipeFilters): Promise<Recipe[]>;
-  getRecipe(recipeId: string): Promise<Recipe>;
+// Recipe operations
+createRecipe(userId, recipe);
+getRecipe(userId, recipeId);
+getUserRecipes(userId);
+updateRecipe(userId, recipeId, updates);
+deleteRecipe(userId, recipeId);
 
-  // Suggestions
-  suggestRecipes(preferences: UserPreferences): Promise<Recipe[]>;
-  suggestBasedOnIngredients(ingredients: string[]): Promise<Recipe[]>;
+// Meal plan operations
+createMealPlan(userId, mealPlan);
+getMealPlan(userId, mealPlanId);
+getUserMealPlans(userId);
+updateMealPlan(userId, mealPlanId, updates);
+deleteMealPlan(userId, mealPlanId);
 
-  // Favorites
-  addFavorite(userId: string, recipeId: string): Promise<void>;
-  getFavorites(userId: string): Promise<Recipe[]>;
-}
+// Grocery list operations
+createGroceryList(userId, groceryList);
+getGroceryList(userId, groceryListId);
+getUserGroceryLists(userId);
+updateGroceryList(userId, groceryListId, updates);
+deleteGroceryList(userId, groceryListId);
+generateGroceryListFromMealPlan(userId, mealPlanId);
 
+// Food order operations
+createFoodOrder(userId, order);
+getFoodOrder(userId, orderId);
+getUserFoodOrders(userId, limit);
+updateFoodOrder(userId, orderId, updates);
+
+// Dietary preferences
+getDietaryPreferences(userId);
+saveDietaryPreferences(userId, preferences);
+```
+
+#### Food Routes (`backend/src/routes/food.ts`)
+
+```
+# Recipes
+GET    /food/recipes              # List recipes
+GET    /food/recipes/:id          # Get recipe
+POST   /food/recipes              # Create recipe
+PATCH  /food/recipes/:id          # Update recipe
+DELETE /food/recipes/:id          # Delete recipe
+
+# Meal Plans
+GET    /food/meal-plans           # List meal plans
+GET    /food/meal-plans/:id       # Get meal plan
+POST   /food/meal-plans           # Create meal plan
+PATCH  /food/meal-plans/:id       # Update meal plan
+DELETE /food/meal-plans/:id       # Delete meal plan
+POST   /food/meal-plans/:id/grocery-list  # Generate grocery list
+
+# Grocery Lists
+GET    /food/grocery-lists        # List grocery lists
+GET    /food/grocery-lists/:id    # Get grocery list
+POST   /food/grocery-lists        # Create grocery list
+PATCH  /food/grocery-lists/:id    # Update grocery list
+DELETE /food/grocery-lists/:id    # Delete grocery list
+
+# Food Orders
+GET    /food/orders               # List orders
+GET    /food/orders/:id           # Get order
+POST   /food/orders               # Create order
+PATCH  /food/orders/:id           # Update order
+
+# Preferences
+GET    /food/preferences          # Get dietary preferences
+PUT    /food/preferences          # Save dietary preferences
+```
+
+### Frontend Components
+
+#### Food Page (`frontend/src/pages/Food.tsx`)
+
+Features:
+
+- Tabbed interface (Recipes, Meal Plans, Grocery Lists, Orders)
+- Recipe cards with ingredients and instructions
+- Meal plan calendar view
+- Grocery list with checkable items
+- Order history
+- Dietary preferences management
+
+#### Food Hooks (`frontend/src/hooks/useFood.ts`)
+
+```typescript
+// Recipes
+useRecipes();
+useRecipe(recipeId);
+useCreateRecipe();
+useUpdateRecipe();
+useDeleteRecipe();
+
+// Meal Plans
+useMealPlans();
+useMealPlan(mealPlanId);
+useCreateMealPlan();
+useUpdateMealPlan();
+useDeleteMealPlan();
+useGenerateGroceryList();
+
+// Grocery Lists
+useGroceryLists();
+useGroceryList(groceryListId);
+useCreateGroceryList();
+useUpdateGroceryList();
+useDeleteGroceryList();
+
+// Orders
+useFoodOrders();
+useFoodOrder(orderId);
+useCreateFoodOrder();
+useUpdateFoodOrder();
+
+// Preferences
+useDietaryPreferences();
+useSaveDietaryPreferences();
+```
+
+### Data Models
+
+#### Recipe
+
+```typescript
 interface Recipe {
+  pk: string; // USER#<userId>
+  sk: string; // RECIPE#<recipeId>
   recipeId: string;
+  userId: string;
   name: string;
-  description: string;
-  cuisine: string;
-  prepTime: number;
-  cookTime: number;
-  servings: number;
+  description?: string;
   ingredients: Ingredient[];
   instructions: string[];
-  nutrition: NutritionInfo;
-  dietaryTags: DietaryTag[];
-  imageUrl: string;
+  prepTime: number; // minutes
+  cookTime: number; // minutes
+  servings: number;
+  cuisine?: string;
+  dietaryTags: string[];
+  calories?: number;
+  imageUrl?: string;
+  source?: string;
+  isFavorite: boolean;
+  rating?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Ingredient {
+  name: string;
+  quantity: number;
+  unit: string;
+  category?: string;
 }
 ```
 
-**Tasks:**
-
-- [ ] Integrate recipe API (Spoonacular/Edamam)
-- [ ] Build recipe search
-- [ ] Implement filtering
-- [ ] Add favorites system
-- [ ] Create recipe detail view
-
-#### 4.2 Meal Planning Service
+#### MealPlan
 
 ```typescript
-interface MealPlanningService {
-  // Generation
-  generateWeeklyPlan(userId: string, preferences: MealPlanPreferences): Promise<MealPlan>;
-
-  // Management
-  getMealPlan(userId: string, week: string): Promise<MealPlan>;
-  updateMealPlan(planId: string, updates: MealPlanUpdate): Promise<MealPlan>;
-
-  // Shopping
-  generateShoppingList(planId: string): Promise<ShoppingList>;
+interface MealPlan {
+  pk: string; // USER#<userId>
+  sk: string; // MEALPLAN#<mealPlanId>
+  mealPlanId: string;
+  userId: string;
+  weekStartDate: string;
+  meals: MealSlot[];
+  status: "draft" | "active" | "completed";
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface MealPlan {
-  planId: string;
-  userId: string;
-  weekStart: string;
-  meals: {
-    day: string;
-    breakfast?: Recipe;
-    lunch?: Recipe;
-    dinner?: Recipe;
-    snacks?: Recipe[];
-  }[];
-  shoppingList: ShoppingList;
+interface MealSlot {
+  day: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
+  mealType: "breakfast" | "lunch" | "dinner" | "snack";
+  recipeId?: string;
+  recipeName?: string;
+  notes?: string;
 }
 ```
 
-**Tasks:**
+#### GroceryList
 
-- [ ] Design meal plan schema
-- [ ] Implement AI-powered plan generation
-- [ ] Add meal swapping
-- [ ] Build shopping list generation
-- [ ] Create meal plan UI
+```typescript
+interface GroceryList {
+  pk: string; // USER#<userId>
+  sk: string; // GROCERYLIST#<groceryListId>
+  groceryListId: string;
+  userId: string;
+  name: string;
+  mealPlanId?: string;
+  items: GroceryItem[];
+  status: "draft" | "ready" | "ordered" | "delivered";
+  store?: string;
+  estimatedTotal?: number;
+  deliveryDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-#### 4.3 Dietary Preferences
+interface GroceryItem {
+  itemId: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  category: string;
+  checked: boolean;
+  price?: number;
+  notes?: string;
+}
+```
+
+#### FoodOrder
+
+```typescript
+interface FoodOrder {
+  pk: string; // USER#<userId>
+  sk: string; // FOODORDER#<orderId>
+  orderId: string;
+  userId: string;
+  service: "deliveroo" | "uber_eats" | "just_eat" | "ocado" | "tesco" | "amazon_fresh";
+  orderType: "delivery" | "grocery";
+  items: OrderItem[];
+  restaurant?: string;
+  store?: string;
+  subtotal: number;
+  deliveryFee: number;
+  serviceFee: number;
+  total: number;
+  status: "pending" | "confirmed" | "preparing" | "delivering" | "delivered" | "cancelled";
+  deliveryAddress: string;
+  deliveryTime?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+#### DietaryPreferences
 
 ```typescript
 interface DietaryPreferences {
-  restrictions: DietaryRestriction[];
-  allergies: string[];
-  dislikes: string[];
+  pk: string; // USER#<userId>
+  sk: string; // PREFERENCES#DIETARY
+  userId: string;
+  restrictions: string[]; // vegetarian, vegan, gluten-free, etc.
+  allergies: string[]; // nuts, dairy, shellfish, etc.
+  dislikes: string[]; // foods to avoid
   cuisinePreferences: string[];
   calorieTarget?: number;
-  macroTargets?: MacroTargets;
-  budgetPerMeal?: number;
-  householdSize: number;
+  mealBudget?: number;
+  weeklyBudget?: number;
+  servingsDefault: number;
+  updatedAt: string;
 }
-
-type DietaryRestriction =
-  | "vegetarian"
-  | "vegan"
-  | "pescatarian"
-  | "gluten_free"
-  | "dairy_free"
-  | "nut_free"
-  | "halal"
-  | "kosher"
-  | "low_carb"
-  | "keto";
-```
-
-**Tasks:**
-
-- [ ] Create preferences schema
-- [ ] Implement preference filtering
-- [ ] Add allergy warnings
-- [ ] Build preference UI
-- [ ] Integrate with meal planning
-
----
-
-## Week 23-24: Grocery Shopping
-
-### Objectives
-
-- Integrate Ocado API
-- Integrate Tesco API
-- Build price comparison
-- Implement order automation
-
-### Deliverables
-
-#### 4.4 Grocery Service
-
-```typescript
-interface GroceryService {
-  // Connection
-  connect(userId: string, provider: GroceryProvider): Promise<void>;
-
-  // Search
-  searchProducts(query: string, provider?: GroceryProvider): Promise<Product[]>;
-
-  // Cart
-  createCart(userId: string, provider: GroceryProvider): Promise<Cart>;
-  addToCart(cartId: string, product: Product, quantity: number): Promise<void>;
-
-  // Orders
-  checkout(cartId: string, deliverySlot: DeliverySlot): Promise<Order>;
-  getOrders(userId: string): Promise<Order[]>;
-
-  // Automation
-  reorderFavorites(userId: string): Promise<Cart>;
-  orderFromShoppingList(userId: string, listId: string): Promise<Cart>;
-}
-
-type GroceryProvider = "ocado" | "tesco" | "amazon_fresh" | "sainsburys";
-```
-
-**Tasks:**
-
-- [ ] Integrate Ocado API
-- [ ] Integrate Tesco API
-- [ ] Build product search
-- [ ] Implement cart management
-- [ ] Add order tracking
-
-#### 4.5 Price Comparison
-
-```typescript
-interface PriceComparisonService {
-  // Compare
-  compareProduct(productName: string): Promise<PriceComparison>;
-  compareCart(items: CartItem[]): Promise<CartComparison>;
-
-  // Suggestions
-  suggestCheaperAlternatives(product: Product): Promise<Product[]>;
-  findBestDeals(category: string): Promise<Deal[]>;
-}
-
-interface PriceComparison {
-  productName: string;
-  prices: {
-    provider: GroceryProvider;
-    price: number;
-    unitPrice: number;
-    inStock: boolean;
-  }[];
-  cheapest: GroceryProvider;
-  savings: number;
-}
-```
-
-**Tasks:**
-
-- [ ] Build price aggregation
-- [ ] Implement comparison logic
-- [ ] Add deal detection
-- [ ] Create comparison UI
-- [ ] Add price alerts
-
-#### 4.6 Delivery Scheduling
-
-```typescript
-interface DeliveryService {
-  // Slots
-  getAvailableSlots(provider: GroceryProvider, postcode: string): Promise<DeliverySlot[]>;
-
-  // Scheduling
-  scheduleDelivery(orderId: string, slot: DeliverySlot): Promise<void>;
-  rescheduleDelivery(orderId: string, newSlot: DeliverySlot): Promise<void>;
-
-  // Integration
-  syncWithCalendar(userId: string, delivery: Delivery): Promise<void>;
-}
-```
-
-**Tasks:**
-
-- [ ] Implement slot fetching
-- [ ] Build scheduling logic
-- [ ] Add calendar integration
-- [ ] Create delivery tracking
-- [ ] Add delivery reminders
-
----
-
-## Week 25-26: Food Delivery
-
-### Objectives
-
-- Integrate Deliveroo
-- Integrate Uber Eats
-- Build restaurant discovery
-- Implement order automation
-
-### Deliverables
-
-#### 4.7 Food Delivery Service
-
-```typescript
-interface FoodDeliveryService {
-  // Discovery
-  searchRestaurants(location: Location, filters: RestaurantFilters): Promise<Restaurant[]>;
-  getRestaurant(restaurantId: string): Promise<Restaurant>;
-  getMenu(restaurantId: string): Promise<Menu>;
-
-  // Orders
-  createOrder(userId: string, items: MenuItem[], restaurant: Restaurant): Promise<Order>;
-  trackOrder(orderId: string): Promise<OrderStatus>;
-  cancelOrder(orderId: string): Promise<void>;
-
-  // History
-  getOrderHistory(userId: string): Promise<Order[]>;
-  reorder(orderId: string): Promise<Order>;
-}
-
-type FoodDeliveryProvider = "deliveroo" | "uber_eats" | "just_eat";
-```
-
-**Tasks:**
-
-- [ ] Integrate Deliveroo API
-- [ ] Integrate Uber Eats API
-- [ ] Build restaurant search
-- [ ] Implement order placement
-- [ ] Add order tracking
-
-#### 4.8 Smart Suggestions
-
-```typescript
-interface FoodSuggestionService {
-  // Suggestions
-  suggestRestaurant(userId: string, context: MealContext): Promise<Restaurant[]>;
-  suggestDish(userId: string, restaurant: Restaurant): Promise<MenuItem[]>;
-
-  // Learning
-  recordPreference(userId: string, preference: FoodPreference): Promise<void>;
-
-  // Context
-  getMealContext(userId: string): Promise<MealContext>;
-}
-
-interface MealContext {
-  timeOfDay: "breakfast" | "lunch" | "dinner" | "snack";
-  dayOfWeek: string;
-  weather?: string;
-  recentOrders: Order[];
-  budget?: number;
-}
-```
-
-**Tasks:**
-
-- [ ] Build suggestion algorithm
-- [ ] Implement preference learning
-- [ ] Add context awareness
-- [ ] Create suggestion UI
-- [ ] Add quick reorder
-
----
-
-## API Endpoints
-
-### Recipes API
-
-```
-GET    /recipes                    # Search recipes
-GET    /recipes/:id                # Get recipe details
-GET    /recipes/suggestions        # Get suggestions
-POST   /recipes/:id/favorite       # Add to favorites
-DELETE /recipes/:id/favorite       # Remove from favorites
-```
-
-### Meal Plans API
-
-```
-GET    /meal-plans                 # List meal plans
-POST   /meal-plans/generate        # Generate new plan
-GET    /meal-plans/:id             # Get plan details
-PATCH  /meal-plans/:id             # Update plan
-GET    /meal-plans/:id/shopping    # Get shopping list
-```
-
-### Grocery API
-
-```
-GET    /grocery/products           # Search products
-POST   /grocery/cart               # Create cart
-POST   /grocery/cart/:id/items     # Add to cart
-GET    /grocery/slots              # Get delivery slots
-POST   /grocery/checkout           # Place order
-GET    /grocery/orders             # List orders
-```
-
-### Food Delivery API
-
-```
-GET    /delivery/restaurants       # Search restaurants
-GET    /delivery/restaurants/:id   # Get restaurant
-GET    /delivery/restaurants/:id/menu  # Get menu
-POST   /delivery/orders            # Place order
-GET    /delivery/orders/:id        # Track order
-POST   /delivery/orders/:id/reorder # Reorder
 ```
 
 ---
 
-## Success Criteria
+## API Endpoints Summary
 
-- [ ] Recipe search working
-- [ ] Meal plans generating correctly
-- [ ] Dietary preferences respected
-- [ ] Grocery ordering functional
-- [ ] Price comparison accurate
-- [ ] Food delivery working
-- [ ] Order tracking functional
-- [ ] Suggestions improving over time
+| Category      | Endpoints                                  |
+| ------------- | ------------------------------------------ |
+| Recipes       | 5 endpoints (CRUD)                         |
+| Meal Plans    | 6 endpoints (CRUD + generate grocery list) |
+| Grocery Lists | 5 endpoints (CRUD)                         |
+| Food Orders   | 4 endpoints (CRUD without delete)          |
+| Preferences   | 2 endpoints (GET/PUT)                      |
 
----
-
-## Risk Mitigation
-
-| Risk             | Mitigation                                   |
-| ---------------- | -------------------------------------------- |
-| API availability | Support multiple providers                   |
-| Price accuracy   | Real-time price fetching                     |
-| Dietary mistakes | Double-check allergies, require confirmation |
-| Delivery issues  | Track orders, notify user of delays          |
+**Total: 22 endpoints**
 
 ---
 
-## Next Phase Preview
+## Completion Checklist
 
-**Phase 5: Life (Weeks 27-32)**
+### Backend
 
-- Social and relationship management
-- Appointment booking automation
-- Travel planning and booking
-- Home management
+- [x] Create food adapter with all CRUD operations
+- [x] Implement recipe management
+- [x] Implement meal plan management
+- [x] Implement grocery list management
+- [x] Implement grocery list generation from meal plan
+- [x] Implement food order management
+- [x] Implement dietary preferences
+- [x] Create food routes with Joi validation
+- [x] Add authentication middleware
+
+### Frontend
+
+- [x] Create Food page with tabs
+- [x] Build recipe list and detail views
+- [x] Build meal plan interface
+- [x] Build grocery list with checkable items
+- [x] Build order history view
+- [x] Create all food hooks
+- [x] Add Food to navigation
+
+---
+
+## What's Not Included (Deferred)
+
+- ❌ Actual food delivery API integrations (Deliveroo, Uber Eats, etc.) - Simulated
+- ❌ Actual grocery delivery API integrations (Ocado, Tesco, etc.) - Simulated
+- ❌ AI meal suggestions - Deferred
+- ❌ Nutrition tracking - Deferred
+- ❌ Recipe import from URLs - Deferred
+- ❌ Barcode scanning - Deferred
+
+---
+
+## Next Phase
+
+**Phase 5: Life Admin & Social** - Contacts, events, appointments, travel, and gifts

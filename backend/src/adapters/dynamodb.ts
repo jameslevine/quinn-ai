@@ -29,6 +29,9 @@ export const KEY_PREFIXES = {
   INTEGRATION: "INTEGRATION#",
   EMAIL: "EMAIL#",
   SETTING: "SETTING#",
+  CONVERSATION: "CONVERSATION#",
+  MESSAGE: "MESSAGE#",
+  CALL: "CALL#",
 } as const;
 
 // GSI names

@@ -7,13 +7,15 @@ const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET || "";
 const GMAIL_REDIRECT_URI =
   process.env.GMAIL_REDIRECT_URI || "http://localhost:3001/integrations/gmail/callback";
 
-// Gmail scopes
+// Gmail scopes (includes Calendar for unified Google integration)
 const GMAIL_SCOPES = [
   "https://www.googleapis.com/auth/gmail.readonly",
   "https://www.googleapis.com/auth/gmail.send",
   "https://www.googleapis.com/auth/gmail.compose",
   "https://www.googleapis.com/auth/gmail.modify",
   "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/calendar",
+  "https://www.googleapis.com/auth/calendar.events",
 ];
 
 // Create OAuth2 client

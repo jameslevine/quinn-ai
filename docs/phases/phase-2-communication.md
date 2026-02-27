@@ -1,412 +1,198 @@
-# Phase 2: Communication (Weeks 9-14)
+# Phase 2: Communication ✅ COMPLETE
 
 ## Overview
 
-Phase 2 adds phone call capability and advanced email automation, enabling Quinn to make calls on behalf of users and automate email workflows.
+Phase 2 added email management capabilities with Gmail integration, allowing users to view, manage, and interact with their emails through Quinn.
 
-## Goals
-
-1. Integrate Twilio for voice calls
-2. Implement voice synthesis with Amazon Polly
-3. Build call scripting and execution engine
-4. Add advanced email automation rules
-5. Enable SMS-based interaction
+**Status:** ✅ Complete  
+**Completed:** February 2026
 
 ---
 
-## Week 9-10: Voice Infrastructure
+## What Was Built
 
-### Objectives
+### Backend Components
 
-- Set up Twilio account and phone numbers
-- Integrate Amazon Polly for voice synthesis
-- Implement speech-to-text with Amazon Transcribe
-- Build call recording and storage pipeline
-
-### Deliverables
-
-#### 2.1 Twilio Integration
+#### Gmail Integration (`backend/src/lib/gmail.ts`)
 
 ```typescript
-interface TwilioService {
-  // Phone number management
-  provisionNumber(userId: string): Promise<PhoneNumber>;
-
-  // Outbound calls
-  initiateCall(params: CallParams): Promise<Call>;
-
-  // Call control
-  endCall(callSid: string): Promise<void>;
-  transferCall(callSid: string, to: string): Promise<void>;
-
-  // Webhooks
-  handleStatusCallback(event: TwilioEvent): Promise<void>;
-}
+// Gmail service functions
+-getGmailAuthUrl(userId) - // Generate OAuth URL
+  handleGmailCallback(userId, code) - // Process OAuth callback
+  getGmailClient(userId) - // Get authenticated client
+  listEmails(userId, options) - // List emails with pagination
+  getEmail(userId, emailId) - // Get single email
+  sendEmail(userId, to, subject, body) - // Send email
+  createDraft(userId, to, subject, body); // Create draft
 ```
 
-**Tasks:**
+#### Email Routes (`backend/src/routes/emails.ts`)
 
-- [ ] Set up Twilio account
-- [ ] Provision phone numbers
-- [ ] Configure webhooks
-- [ ] Implement call initiation
-- [ ] Add call status tracking
-
-#### 2.2 Voice Synthesis (Amazon Polly)
-
-```typescript
-interface VoiceSynthesisService {
-  // Text to speech
-  synthesize(text: string, voiceId: string): Promise<AudioStream>;
-
-  // SSML support
-  synthesizeSSML(ssml: string, voiceId: string): Promise<AudioStream>;
-
-  // Voice options
-  listVoices(): Promise<Voice[]>;
-}
+```
+GET    /emails                 # List emails with pagination
+GET    /emails/:emailId        # Get email details
+POST   /emails/send            # Send email (creates action for approval)
+POST   /emails/draft           # Create draft
 ```
 
-**Tasks:**
+#### Integration Routes (`backend/src/routes/integrations.ts`)
 
-- [ ] Integrate Amazon Polly
-- [ ] Implement voice selection
-- [ ] Add SSML support for natural speech
-- [ ] Cache common phrases
-- [ ] Configure voice settings per user
-
-#### 2.3 Speech Recognition (Amazon Transcribe)
-
-```typescript
-interface SpeechRecognitionService {
-  // Real-time transcription
-  startTranscription(audioStream: AudioStream): Promise<TranscriptionSession>;
-
-  // Post-call transcription
-  transcribeRecording(recordingUrl: string): Promise<Transcript>;
-}
+```
+GET    /integrations           # List user integrations
+GET    /integrations/gmail/auth-url    # Get Gmail OAuth URL
+GET    /integrations/gmail/callback    # Handle OAuth callback
+DELETE /integrations/:integrationId    # Disconnect integration
 ```
 
-**Tasks:**
+### Frontend Components
 
-- [ ] Integrate Amazon Transcribe
-- [ ] Implement real-time transcription
-- [ ] Add post-call transcription
-- [ ] Store transcripts in DynamoDB
+#### Emails Page (`frontend/src/pages/Emails.tsx`)
 
-#### 2.4 Call Recording Pipeline
+Features:
+
+- Email list with sender, subject, snippet preview
+- Read/unread status indicators
+- Date formatting
+- Click to view email details
+- Compose new email dialog
+- Gmail connection prompt if not connected
+
+#### Email Hooks (`frontend/src/hooks/useEmails.ts`)
 
 ```typescript
-interface CallRecordingService {
-  // Recording management
-  startRecording(callSid: string): Promise<void>;
-  stopRecording(callSid: string): Promise<string>; // returns URL
-
-  // Storage
-  storeRecording(recordingUrl: string, userId: string): Promise<string>;
-
-  // Retrieval
-  getRecording(recordingId: string): Promise<Recording>;
-}
+-useEmails() - // Fetch email list
+  useEmail(emailId) - // Fetch single email
+  useSendEmail() - // Send email mutation
+  useCreateDraft(); // Create draft mutation
 ```
 
-**Tasks:**
-
-- [ ] Configure Twilio recording
-- [ ] Set up S3 bucket for recordings
-- [ ] Implement secure storage
-- [ ] Add retention policies
-- [ ] Create playback endpoint
-
----
-
-## Week 11-12: Phone Call Execution
-
-### Objectives
-
-- Build call scripting engine
-- Implement real-time call handling
-- Create post-call processing
-- Add call approval workflow
-
-### Deliverables
-
-#### 2.5 Call Scripting Engine
+#### Integration Hooks (`frontend/src/hooks/useIntegrations.ts`)
 
 ```typescript
-interface CallScript {
-  scriptId: string;
-  name: string;
-  purpose: string;
-  steps: CallScriptStep[];
-  fallbacks: FallbackHandler[];
-  successCriteria: SuccessCriteria;
-}
-
-interface CallScriptStep {
-  stepId: string;
-  type: "speak" | "listen" | "dtmf" | "transfer" | "hangup";
-  content?: string;
-  expectedResponses?: ExpectedResponse[];
-  timeout?: number;
-  nextStep?: string;
-}
+-useIntegrations() - // List connected integrations
+  useGmailAuthUrl() - // Get OAuth URL
+  useDisconnectIntegration(); // Disconnect integration
 ```
 
-**Tasks:**
+### Data Models
 
-- [ ] Design script schema
-- [ ] Build script interpreter
-- [ ] Implement step execution
-- [ ] Add branching logic
-- [ ] Create script templates
-
-#### 2.6 Real-Time Call Handler
+#### Integration
 
 ```typescript
-interface CallHandler {
-  // Call lifecycle
-  onCallStarted(call: Call): Promise<void>;
-  onSpeechDetected(call: Call, speech: string): Promise<CallAction>;
-  onDTMFReceived(call: Call, digits: string): Promise<CallAction>;
-  onCallEnded(call: Call): Promise<void>;
-
-  // AI integration
-  generateResponse(context: CallContext, input: string): Promise<string>;
-}
-```
-
-**Tasks:**
-
-- [ ] Implement WebSocket handler
-- [ ] Build conversation state machine
-- [ ] Integrate AI for responses
-- [ ] Add error recovery
-- [ ] Implement call logging
-
-#### 2.7 Call Types
-
-| Call Type           | Description                | Script Template     |
-| ------------------- | -------------------------- | ------------------- |
-| Appointment Booking | Book doctor, dentist, etc. | appointment_booking |
-| Customer Service    | Handle support calls       | customer_service    |
-| Bill Negotiation    | Negotiate rates            | bill_negotiation    |
-| Reservation         | Restaurant, hotel          | reservation         |
-| Follow-up           | Check order status         | follow_up           |
-
-**Tasks:**
-
-- [ ] Create appointment booking script
-- [ ] Create customer service script
-- [ ] Create bill negotiation script
-- [ ] Create reservation script
-- [ ] Test with real calls
-
-#### 2.8 Call Approval Workflow
-
-```typescript
-interface CallApproval {
-  approvalId: string;
-  callType: CallType;
-  recipient: {
-    name: string;
-    phone: string;
-    organization?: string;
-  };
-  purpose: string;
-  script: CallScript;
-  estimatedDuration: number;
-  userInstructions?: string;
-}
-```
-
-**Tasks:**
-
-- [ ] Create call approval UI
-- [ ] Show script preview
-- [ ] Allow user modifications
-- [ ] Implement call scheduling
-- [ ] Add post-call review
-
----
-
-## Week 13-14: Email Automation
-
-### Objectives
-
-- Build automation rule engine
-- Implement follow-up automation
-- Add unsubscribe automation
-- Create email templates
-
-### Deliverables
-
-#### 2.9 Email Automation Rules
-
-```typescript
-interface EmailAutomationRule {
-  ruleId: string;
+interface Integration {
+  pk: string; // USER#<userId>
+  sk: string; // INTEGRATION#<integrationId>
+  integrationId: string;
   userId: string;
-  name: string;
-  enabled: boolean;
-  trigger: EmailTrigger;
-  conditions: EmailCondition[];
-  actions: EmailAction[];
-  approvalMode: ApprovalMode;
-}
-
-type EmailTrigger =
-  | { type: "new_email" }
-  | { type: "no_response"; days: number }
-  | { type: "scheduled"; cron: string };
-
-type EmailAction =
-  | { type: "reply"; template: string }
-  | { type: "forward"; to: string }
-  | { type: "label"; label: string }
-  | { type: "archive" }
-  | { type: "unsubscribe" };
-```
-
-**Tasks:**
-
-- [ ] Design rule schema
-- [ ] Build rule engine
-- [ ] Implement triggers
-- [ ] Implement actions
-- [ ] Create rule management UI
-
-#### 2.10 Follow-Up Automation
-
-```typescript
-interface FollowUpRule {
-  ruleId: string;
-  name: string;
-  conditions: {
-    noResponseDays: number;
-    emailCategories?: EmailCategory[];
-    senderDomains?: string[];
+  type: "gmail" | "outlook" | "plaid";
+  status: "active" | "expired" | "revoked";
+  credentials: {
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: string;
   };
-  action: {
-    template: string;
-    maxFollowUps: number;
-    intervalDays: number;
-  };
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
 }
 ```
 
-**Tasks:**
-
-- [ ] Implement follow-up detection
-- [ ] Create follow-up templates
-- [ ] Build scheduling system
-- [ ] Add follow-up tracking
-- [ ] Implement max follow-up limits
-
-#### 2.11 Unsubscribe Automation
+#### Email (from Gmail API)
 
 ```typescript
-interface UnsubscribeService {
-  // Detection
-  detectUnsubscribeLink(email: Email): Promise<string | null>;
-
-  // Execution
-  unsubscribe(email: Email): Promise<UnsubscribeResult>;
-
-  // Tracking
-  getUnsubscribeHistory(userId: string): Promise<UnsubscribeRecord[]>;
+interface Email {
+  id: string;
+  threadId: string;
+  from: string;
+  to: string;
+  subject: string;
+  snippet: string;
+  body: string;
+  date: string;
+  isRead: boolean;
+  labels: string[];
 }
 ```
-
-**Tasks:**
-
-- [ ] Detect unsubscribe links
-- [ ] Implement automated unsubscribe
-- [ ] Track unsubscribe history
-- [ ] Add bulk unsubscribe
-- [ ] Create unsubscribe suggestions
-
-#### 2.12 SMS Interaction
-
-```typescript
-interface SMSService {
-  // Sending
-  sendSMS(to: string, message: string): Promise<void>;
-
-  // Receiving
-  handleIncomingSMS(from: string, message: string): Promise<string>;
-
-  // Approval via SMS
-  sendApprovalRequest(userId: string, approval: Approval): Promise<void>;
-  processApprovalResponse(from: string, response: string): Promise<void>;
-}
-```
-
-**Tasks:**
-
-- [ ] Configure Twilio SMS
-- [ ] Implement SMS sending
-- [ ] Build SMS command parser
-- [ ] Add approval via SMS
-- [ ] Create SMS templates
 
 ---
 
 ## API Endpoints
 
-### Voice API
+### Emails
 
-```
-POST   /calls                    # Initiate call
-GET    /calls                    # List calls
-GET    /calls/:callId            # Get call details
-POST   /calls/:callId/end        # End call
-GET    /calls/:callId/recording  # Get recording
-GET    /calls/:callId/transcript # Get transcript
-```
+| Method | Endpoint           | Description             |
+| ------ | ------------------ | ----------------------- |
+| GET    | `/emails`          | List emails (paginated) |
+| GET    | `/emails/:emailId` | Get email details       |
+| POST   | `/emails/send`     | Send email              |
+| POST   | `/emails/draft`    | Create draft            |
 
-### Automation API
+### Integrations
 
-```
-GET    /automations              # List rules
-POST   /automations              # Create rule
-GET    /automations/:ruleId      # Get rule
-PATCH  /automations/:ruleId      # Update rule
-DELETE /automations/:ruleId      # Delete rule
-POST   /automations/:ruleId/test # Test rule
+| Method | Endpoint                       | Description            |
+| ------ | ------------------------------ | ---------------------- |
+| GET    | `/integrations`                | List user integrations |
+| GET    | `/integrations/gmail/auth-url` | Get Gmail OAuth URL    |
+| GET    | `/integrations/gmail/callback` | OAuth callback handler |
+| DELETE | `/integrations/:id`            | Disconnect integration |
+
+---
+
+## Completion Checklist
+
+### Backend
+
+- [x] Create Gmail service library
+- [x] Implement OAuth flow (auth URL + callback)
+- [x] Create integration adapter for storing tokens
+- [x] Implement email listing with pagination
+- [x] Implement email detail fetching
+- [x] Implement email sending
+- [x] Implement draft creation
+- [x] Create email routes
+- [x] Create integration routes
+
+### Frontend
+
+- [x] Create Emails page
+- [x] Build email list component
+- [x] Add compose email dialog
+- [x] Create email hooks
+- [x] Create integration hooks
+- [x] Add Gmail connection flow in Settings
+- [x] Add Emails to navigation
+
+---
+
+## Configuration Required
+
+### Google Cloud Console
+
+1. Create OAuth 2.0 credentials
+2. Add authorized redirect URI: `https://8aqsagpkp6.execute-api.eu-west-2.amazonaws.com/dev/integrations/gmail/callback`
+3. Enable Gmail API
+
+### Environment Variables
+
+```bash
+# Backend (.env or Lambda environment)
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
+GOOGLE_REDIRECT_URI=https://your-api/integrations/gmail/callback
 ```
 
 ---
 
-## Success Criteria
+## What's Not Included (Deferred)
 
-- [ ] Twilio integration working
-- [ ] Voice synthesis natural sounding
-- [ ] Call scripts executing correctly
-- [ ] Call recordings stored and accessible
-- [ ] Transcription accurate
-- [ ] Email automation rules working
-- [ ] Follow-up automation functional
-- [ ] SMS interaction working
+- ❌ Outlook integration - Deferred
+- ❌ AI email categorization - Deferred
+- ❌ AI draft generation - Deferred
+- ❌ Email sync to DynamoDB - Deferred (reads directly from Gmail)
+- ❌ Email notifications - Deferred
 
 ---
 
-## Risk Mitigation
+## Next Phase
 
-| Risk                 | Mitigation                         |
-| -------------------- | ---------------------------------- |
-| Call quality issues  | Start with simple scripts, iterate |
-| AI response delays   | Pre-generate common responses      |
-| Transcription errors | Use post-call review               |
-| Automation mistakes  | Require approval for new rules     |
-
----
-
-## Next Phase Preview
-
-**Phase 3: Money (Weeks 15-20)**
-
-- Open Banking integration
-- Budget tracking and management
-- Spending account integration
-- Bill payment automation
+**Phase 3: Money Management** - Banking integration with Plaid

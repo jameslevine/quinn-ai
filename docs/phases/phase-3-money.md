@@ -1,355 +1,233 @@
-# Phase 3: Money (Weeks 15-20)
+# Phase 3: Money Management ✅ COMPLETE
 
 ## Overview
 
-Phase 3 adds financial capabilities, enabling Quinn to track spending, manage budgets, and make payments from a dedicated spending account.
+Phase 3 added banking and financial management capabilities with Plaid integration, allowing users to connect bank accounts, view transactions, and manage budgets.
 
-## Goals
-
-1. Integrate Open Banking (TrueLayer/Plaid)
-2. Implement transaction categorization
-3. Build budget tracking and alerts
-4. Connect spending account (Monzo/Revolut)
-5. Enable bill payment automation
+**Status:** ✅ Complete  
+**Completed:** February 2026
 
 ---
 
-## Week 15-16: Open Banking Integration
+## What Was Built
 
-### Objectives
+### Backend Components
 
-- Integrate TrueLayer for UK banks
-- Implement bank account connection flow
-- Build transaction sync pipeline
-- Create transaction categorization
-
-### Deliverables
-
-#### 3.1 TrueLayer Integration
+#### Plaid Integration (`backend/src/lib/plaid.ts`)
 
 ```typescript
-interface OpenBankingService {
-  // Connection
-  getAuthUrl(userId: string, provider: string): string;
-  handleCallback(userId: string, code: string): Promise<void>;
+// Plaid service functions
+createLinkToken(userId); // Create Plaid Link token
+exchangePublicToken(userId, publicToken); // Exchange for access token
+getAccounts(userId); // Get linked accounts
+getTransactions(userId, options); // Get transactions
+getBalance(userId); // Get account balances
+```
 
-  // Accounts
-  getAccounts(userId: string): Promise<BankAccount[]>;
-  getBalance(accountId: string): Promise<Balance>;
+#### Banking Adapter (`backend/src/adapters/banking.ts`)
 
-  // Transactions
-  getTransactions(accountId: string, dateRange: DateRange): Promise<Transaction[]>;
-  syncTransactions(userId: string): Promise<SyncResult>;
+```typescript
+// DynamoDB operations for banking data
+saveBankConnection(userId, data); // Store bank connection
+getBankConnections(userId); // Get user's bank connections
+saveBudget(userId, budget); // Save budget
+getBudgets(userId); // Get user's budgets
+updateBudget(userId, budgetId, updates); // Update budget
+deleteBudget(userId, budgetId); // Delete budget
+```
+
+#### Banking Routes (`backend/src/routes/banking.ts`)
+
+```
+POST   /banking/link-token        # Create Plaid Link token
+POST   /banking/exchange-token    # Exchange public token
+GET    /banking/accounts          # Get linked accounts
+GET    /banking/transactions      # Get transactions
+GET    /banking/balance           # Get account balances
+GET    /banking/budgets           # Get budgets
+POST   /banking/budgets           # Create budget
+PATCH  /banking/budgets/:id       # Update budget
+DELETE /banking/budgets/:id       # Delete budget
+```
+
+### Frontend Components
+
+#### Banking Page (`frontend/src/pages/Banking.tsx`)
+
+Features:
+
+- Account overview with balances
+- Transaction list with filtering
+- Budget management
+- Plaid Link integration for connecting banks
+- Spending analytics cards
+
+#### Banking Hooks (`frontend/src/hooks/useBanking.ts`)
+
+```typescript
+useLinkToken(); // Get Plaid Link token
+useExchangeToken(); // Exchange public token
+useAccounts(); // Fetch linked accounts
+useTransactions(); // Fetch transactions
+useBalance(); // Fetch balances
+useBudgets(); // Fetch budgets
+useCreateBudget(); // Create budget mutation
+useUpdateBudget(); // Update budget mutation
+useDeleteBudget(); // Delete budget mutation
+```
+
+### Data Models
+
+#### BankConnection
+
+```typescript
+interface BankConnection {
+  pk: string; // USER#<userId>
+  sk: string; // BANK#<connectionId>
+  connectionId: string;
+  userId: string;
+  institutionId: string;
+  institutionName: string;
+  accessToken: string; // Encrypted Plaid access token
+  itemId: string;
+  accounts: BankAccount[];
+  status: "active" | "error" | "disconnected";
+  createdAt: string;
+  updatedAt: string;
 }
 ```
 
-**Tasks:**
-
-- [ ] Set up TrueLayer account
-- [ ] Implement OAuth flow
-- [ ] Create account listing
-- [ ] Implement transaction sync
-- [ ] Add balance tracking
-
-#### 3.2 Transaction Categorization
+#### BankAccount
 
 ```typescript
-interface TransactionCategorizationService {
-  // Categorize
-  categorize(transaction: Transaction): Promise<Category>;
-  categorizeBatch(transactions: Transaction[]): Promise<Map<string, Category>>;
-
-  // Learning
-  updateCategory(transactionId: string, category: Category): Promise<void>;
-  trainOnUserFeedback(userId: string): Promise<void>;
-}
-
-type Category =
-  | "groceries"
-  | "dining"
-  | "transport"
-  | "utilities"
-  | "entertainment"
-  | "shopping"
-  | "health"
-  | "travel"
-  | "subscriptions"
-  | "income"
-  | "transfer"
-  | "other";
-```
-
-**Tasks:**
-
-- [ ] Create categorization rules
-- [ ] Implement AI categorization
-- [ ] Add merchant mapping
-- [ ] Build learning from corrections
-- [ ] Store categorization results
-
----
-
-## Week 17-18: Spending Account Integration
-
-### Objectives
-
-- Integrate Monzo/Revolut APIs
-- Implement spending controls
-- Build transaction approval workflow
-- Create real-time balance tracking
-
-### Deliverables
-
-#### 3.3 Spending Account Service
-
-```typescript
-interface SpendingAccountService {
-  // Connection
-  connect(userId: string, provider: "monzo" | "revolut"): Promise<void>;
-  disconnect(userId: string): Promise<void>;
-
-  // Balance
-  getBalance(userId: string): Promise<Balance>;
-
-  // Transactions
-  getTransactions(userId: string, filters: TransactionFilters): Promise<Transaction[]>;
-
-  // Payments
-  initiatePayment(userId: string, payment: PaymentRequest): Promise<Payment>;
-
-  // Controls
-  setSpendingLimits(userId: string, limits: SpendingLimits): Promise<void>;
-  pauseSpending(userId: string): Promise<void>;
-  resumeSpending(userId: string): Promise<void>;
+interface BankAccount {
+  accountId: string;
+  name: string;
+  officialName?: string;
+  type: "checking" | "savings" | "credit" | "investment";
+  subtype?: string;
+  mask: string; // Last 4 digits
+  currentBalance: number;
+  availableBalance?: number;
+  currency: string;
 }
 ```
 
-**Tasks:**
-
-- [ ] Integrate Monzo API
-- [ ] Integrate Revolut API
-- [ ] Implement payment initiation
-- [ ] Add spending controls
-- [ ] Create real-time webhooks
-
-#### 3.4 Spending Controls
+#### Transaction
 
 ```typescript
-interface SpendingLimits {
-  perTransaction: number;
-  daily: number;
-  weekly: number;
-  monthly: number;
-  byCategory: Record<Category, number>;
-}
-
-interface SpendingControlService {
-  // Validation
-  validateTransaction(
-    userId: string,
-    amount: number,
-    category: Category
-  ): Promise<ValidationResult>;
-
-  // Alerts
-  checkLimits(userId: string): Promise<LimitStatus[]>;
-  sendAlert(userId: string, alert: SpendingAlert): Promise<void>;
+interface Transaction {
+  transactionId: string;
+  accountId: string;
+  amount: number;
+  date: string;
+  name: string;
+  merchantName?: string;
+  category: string[];
+  pending: boolean;
 }
 ```
 
-**Tasks:**
-
-- [ ] Implement limit validation
-- [ ] Create pre-transaction checks
-- [ ] Build alert system
-- [ ] Add spending pause feature
-- [ ] Create limit management UI
-
----
-
-## Week 19-20: Budget Management
-
-### Objectives
-
-- Build budget creation and tracking
-- Implement spending alerts
-- Create financial reports
-- Add bill management
-
-### Deliverables
-
-#### 3.5 Budget Service
+#### Budget
 
 ```typescript
-interface BudgetService {
-  // Budget management
-  createBudget(userId: string, budget: BudgetInput): Promise<Budget>;
-  updateBudget(budgetId: string, updates: BudgetUpdate): Promise<Budget>;
-  deleteBudget(budgetId: string): Promise<void>;
-
-  // Tracking
-  getBudgetStatus(userId: string): Promise<BudgetStatus[]>;
-  getSpendingByCategory(userId: string, period: Period): Promise<CategorySpending[]>;
-
-  // Alerts
-  checkBudgetAlerts(userId: string): Promise<BudgetAlert[]>;
-}
-
 interface Budget {
+  pk: string; // USER#<userId>
+  sk: string; // BUDGET#<budgetId>
   budgetId: string;
   userId: string;
   name: string;
-  period: "weekly" | "monthly";
-  categories: BudgetCategory[];
-  totalLimit: number;
-  startDate: string;
+  category: string;
+  amount: number;
+  period: "weekly" | "monthly" | "yearly";
+  spent: number;
+  createdAt: string;
+  updatedAt: string;
 }
 ```
-
-**Tasks:**
-
-- [ ] Create budget data model
-- [ ] Implement budget CRUD
-- [ ] Build spending tracking
-- [ ] Add budget alerts
-- [ ] Create budget UI
-
-#### 3.6 Financial Reports
-
-```typescript
-interface ReportService {
-  // Reports
-  generateWeeklyReport(userId: string): Promise<WeeklyReport>;
-  generateMonthlyReport(userId: string): Promise<MonthlyReport>;
-
-  // Insights
-  getSpendingInsights(userId: string): Promise<SpendingInsight[]>;
-  getSavingsSuggestions(userId: string): Promise<SavingSuggestion[]>;
-}
-
-interface WeeklyReport {
-  period: DateRange;
-  totalSpent: number;
-  byCategory: CategorySpending[];
-  comparedToLastWeek: number; // percentage
-  budgetStatus: BudgetStatus[];
-  insights: string[];
-}
-```
-
-**Tasks:**
-
-- [ ] Create report templates
-- [ ] Implement weekly reports
-- [ ] Implement monthly reports
-- [ ] Add spending insights
-- [ ] Build savings suggestions
-
-#### 3.7 Bill Management
-
-```typescript
-interface BillService {
-  // Detection
-  detectRecurringBills(userId: string): Promise<Bill[]>;
-
-  // Management
-  addBill(userId: string, bill: BillInput): Promise<Bill>;
-  updateBill(billId: string, updates: BillUpdate): Promise<Bill>;
-
-  // Reminders
-  getUpcomingBills(userId: string, days: number): Promise<Bill[]>;
-  sendBillReminder(userId: string, bill: Bill): Promise<void>;
-
-  // Payments
-  scheduleBillPayment(billId: string, date: string): Promise<void>;
-  payBill(billId: string): Promise<PaymentResult>;
-}
-```
-
-**Tasks:**
-
-- [ ] Implement bill detection
-- [ ] Create bill tracking
-- [ ] Add payment reminders
-- [ ] Build bill payment automation
-- [ ] Create bill management UI
 
 ---
 
 ## API Endpoints
 
-### Banking API
+### Banking
 
-```
-GET    /banking/accounts           # List connected accounts
-POST   /banking/connect            # Connect bank account
-DELETE /banking/accounts/:id       # Disconnect account
-GET    /banking/transactions       # List transactions
-POST   /banking/sync               # Sync transactions
-```
+| Method | Endpoint                  | Description                      |
+| ------ | ------------------------- | -------------------------------- |
+| POST   | `/banking/link-token`     | Create Plaid Link token          |
+| POST   | `/banking/exchange-token` | Exchange public token for access |
+| GET    | `/banking/accounts`       | Get linked bank accounts         |
+| GET    | `/banking/transactions`   | Get transactions                 |
+| GET    | `/banking/balance`        | Get account balances             |
 
-### Budget API
+### Budgets
 
-```
-GET    /budgets                    # List budgets
-POST   /budgets                    # Create budget
-GET    /budgets/:id                # Get budget details
-PATCH  /budgets/:id                # Update budget
-DELETE /budgets/:id                # Delete budget
-GET    /budgets/status             # Get budget status
-```
+| Method | Endpoint               | Description       |
+| ------ | ---------------------- | ----------------- |
+| GET    | `/banking/budgets`     | List user budgets |
+| POST   | `/banking/budgets`     | Create new budget |
+| PATCH  | `/banking/budgets/:id` | Update budget     |
+| DELETE | `/banking/budgets/:id` | Delete budget     |
 
-### Spending API
+---
 
-```
-GET    /spending/balance           # Get spending account balance
-GET    /spending/transactions      # List spending transactions
-POST   /spending/limits            # Set spending limits
-POST   /spending/pause             # Pause spending
-POST   /spending/resume            # Resume spending
-```
+## Completion Checklist
 
-### Bills API
+### Backend
 
-```
-GET    /bills                      # List bills
-POST   /bills                      # Add bill
-PATCH  /bills/:id                  # Update bill
-DELETE /bills/:id                  # Delete bill
-POST   /bills/:id/pay              # Pay bill
+- [x] Create Plaid service library
+- [x] Implement Link token creation
+- [x] Implement public token exchange
+- [x] Create banking adapter for DynamoDB
+- [x] Implement account fetching
+- [x] Implement transaction fetching
+- [x] Implement balance fetching
+- [x] Create budget CRUD operations
+- [x] Create banking routes
+
+### Frontend
+
+- [x] Create Banking page
+- [x] Integrate Plaid Link component
+- [x] Build account overview cards
+- [x] Build transaction list
+- [x] Build budget management UI
+- [x] Create banking hooks
+- [x] Add Banking to navigation
+
+---
+
+## Configuration Required
+
+### Plaid Dashboard
+
+1. Create Plaid account at https://plaid.com
+2. Get API keys (client_id, secret)
+3. Configure webhook URL (optional)
+4. Set environment (sandbox/development/production)
+
+### Environment Variables
+
+```bash
+# Backend (.env or Lambda environment)
+PLAID_CLIENT_ID=your-client-id
+PLAID_SECRET=your-secret
+PLAID_ENV=sandbox  # or development, production
 ```
 
 ---
 
-## Success Criteria
+## What's Not Included (Deferred)
 
-- [ ] Open Banking connection working
-- [ ] Transactions syncing correctly
-- [ ] Categorization accurate (>90%)
-- [ ] Spending account connected
-- [ ] Spending limits enforced
-- [ ] Budgets tracking correctly
-- [ ] Reports generating
-- [ ] Bill reminders working
+- ❌ Dedicated spending account integration - Deferred
+- ❌ Bill tracking and reminders - Deferred
+- ❌ Bill negotiation - Deferred
+- ❌ Automatic categorization improvements - Deferred
+- ❌ Spending alerts - Deferred
+- ❌ Financial reports - Deferred
 
 ---
 
-## Risk Mitigation
+## Next Phase
 
-| Risk                  | Mitigation                                  |
-| --------------------- | ------------------------------------------- |
-| Bank API downtime     | Cache recent data, show stale indicator     |
-| Categorization errors | Allow user corrections, learn from feedback |
-| Payment failures      | Implement retry logic, notify user          |
-| Regulatory issues     | Partner with regulated entities             |
-
----
-
-## Next Phase Preview
-
-**Phase 4: Food (Weeks 21-26)**
-
-- Meal planning and recipes
-- Grocery shopping automation
-- Food delivery integration
-- Nutrition tracking
+**Phase 4: Food Management** - Meal planning, recipes, and grocery lists

@@ -60,12 +60,20 @@ class ApiClient {
           success: false,
           error: data.error || {
             code: "API_ERROR",
-            message: `Request failed with status ${response.status}`,
+            message: data.message || `Request failed with status ${response.status}`,
           },
         };
       }
 
-      return data;
+      // Wrap the response in the expected format if it's not already wrapped
+      if (data.success !== undefined) {
+        return data;
+      }
+
+      return {
+        success: true,
+        data,
+      };
     } catch (error) {
       return {
         success: false,

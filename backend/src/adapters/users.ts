@@ -16,6 +16,10 @@ export interface User {
   firstName?: string;
   lastName?: string;
   cognitoSub: string;
+  phoneNumber?: string;
+  phoneVerified?: boolean;
+  phoneVerificationCode?: string;
+  phoneVerificationExpiry?: string;
   settings: UserSettings;
   createdAt: string;
   updatedAt: string;
@@ -232,4 +236,123 @@ export const getOrCreateDbUser = async (cognitoSub: string, email: string): Prom
     return existingUser;
   }
   return createDbUser(cognitoSub, email);
+};
+
+// Get user by phone number
+export const getDbUserByPhoneNumber = async (phoneNumber: string): Promise<User | null> => {
+  const params = {
+    TableName: TABLE_NAME,
+    IndexName: "gsi2",
+    KeyConditionExpression: "gsi2pk = :gsi2pk",
+    ExpressionAttributeValues: {
+      ":gsi2pk": `PHONE#${phoneNumber}`,
+    },
+  };
+
+  try {
+    const response = await dynamodb.send(new QueryCommand(params));
+    if (response.Items && response.Items.length > 0) {
+      return response.Items[0] as User;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching user by phone number:", error);
+    throw error;
+  }
+};
+
+// Update user phone number
+export const updateDbUserPhoneNumber = async (
+  userId: string,
+  phoneNumber: string
+): Promise<User | null> => {
+  // Generate verification code
+  const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiry = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
+
+  const params = {
+    TableName: TABLE_NAME,
+    Key: {
+      pk: createUserPK(userId),
+      sk: createUserSK(),
+    },
+    UpdateExpression:
+      "SET #phoneNumber = :phoneNumber, #phoneVerified = :phoneVerified, #phoneVerificationCode = :code, #phoneVerificationExpiry = :expiry, #gsi2pk = :gsi2pk, #updatedAt = :updatedAt",
+    ExpressionAttributeNames: {
+      "#phoneNumber": "phoneNumber",
+      "#phoneVerified": "phoneVerified",
+      "#phoneVerificationCode": "phoneVerificationCode",
+      "#phoneVerificationExpiry": "phoneVerificationExpiry",
+      "#gsi2pk": "gsi2pk",
+      "#updatedAt": "updatedAt",
+    },
+    ExpressionAttributeValues: {
+      ":phoneNumber": phoneNumber,
+      ":phoneVerified": false,
+      ":code": verificationCode,
+      ":expiry": expiry,
+      ":gsi2pk": `PHONE#${phoneNumber}`,
+      ":updatedAt": new Date().toISOString(),
+    },
+    ReturnValues: "ALL_NEW" as const,
+  };
+
+  try {
+    const response = await dynamodb.send(new UpdateCommand(params));
+    return response.Attributes as User;
+  } catch (error) {
+    console.error("Error updating user phone number:", error);
+    throw error;
+  }
+};
+
+// Verify user phone number
+export const updateDbUserPhoneVerification = async (
+  userId: string,
+  code: string
+): Promise<boolean> => {
+  // First get the user to check the code
+  const user = await getDbUserById(userId);
+
+  if (!user) {
+    return false;
+  }
+
+  // Check if code matches and hasn't expired
+  if (
+    user.phoneVerificationCode !== code ||
+    !user.phoneVerificationExpiry ||
+    new Date(user.phoneVerificationExpiry) < new Date()
+  ) {
+    return false;
+  }
+
+  // Update user as verified
+  const params = {
+    TableName: TABLE_NAME,
+    Key: {
+      pk: createUserPK(userId),
+      sk: createUserSK(),
+    },
+    UpdateExpression:
+      "SET #phoneVerified = :phoneVerified, #updatedAt = :updatedAt REMOVE #phoneVerificationCode, #phoneVerificationExpiry",
+    ExpressionAttributeNames: {
+      "#phoneVerified": "phoneVerified",
+      "#phoneVerificationCode": "phoneVerificationCode",
+      "#phoneVerificationExpiry": "phoneVerificationExpiry",
+      "#updatedAt": "updatedAt",
+    },
+    ExpressionAttributeValues: {
+      ":phoneVerified": true,
+      ":updatedAt": new Date().toISOString(),
+    },
+  };
+
+  try {
+    await dynamodb.send(new UpdateCommand(params));
+    return true;
+  } catch (error) {
+    console.error("Error verifying user phone:", error);
+    return false;
+  }
 };

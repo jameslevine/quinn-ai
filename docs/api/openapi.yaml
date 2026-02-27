@@ -1,0 +1,1861 @@
+openapi: 3.0.3
+info:
+  title: Quinn AI Personal Assistant API
+  description: |
+    Quinn is an AI-powered personal assistant that helps manage emails, banking, 
+    food planning, life tasks, and more. All endpoints require authentication via 
+    AWS Cognito JWT tokens.
+  version: 1.0.0
+  contact:
+    name: Quinn Support
+    email: support@quinn.ai
+
+servers:
+  - url: https://8aqsagpkp6.execute-api.eu-west-2.amazonaws.com/dev
+    description: Development server
+  - url: https://api.quinn.ai
+    description: Production server (future)
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Users
+    description: User profile management
+  - name: Actions
+    description: Action management (tasks Quinn can perform)
+  - name: Approvals
+    description: Approval workflow for actions
+  - name: Integrations
+    description: Third-party service integrations
+  - name: Emails
+    description: Email management via Gmail
+  - name: Banking
+    description: Banking via Plaid
+  - name: Food
+    description: Meal planning and grocery management
+  - name: Life
+    description: Tasks, reminders, and notes
+  - name: Chat
+    description: AI chat interface
+  - name: AI
+    description: AI-powered suggestions
+  - name: Calls
+    description: Phone call management
+  - name: Calendar
+    description: Google Calendar integration
+
+paths:
+  # Health
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      security: []
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  # Users
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags: [Users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: User profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /users/me/settings:
+    get:
+      tags: [Users]
+      summary: Get user settings
+      responses:
+        "200":
+          description: Settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSettings"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    put:
+      tags: [Users]
+      summary: Update user settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserSettings"
+      responses:
+        "200":
+          description: Settings updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSettings"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # Actions
+  /actions:
+    get:
+      tags: [Actions]
+      summary: Get all actions for current user
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ActionStatus"
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/ActionType"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+        - name: lastKey
+          in: query
+          schema:
+            type: string
+          description: Pagination key from previous response
+      responses:
+        "200":
+          description: Actions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedActions"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Actions]
+      summary: Create a new action
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateActionRequest"
+      responses:
+        "201":
+          description: Action created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Action"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /actions/{actionId}:
+    get:
+      tags: [Actions]
+      summary: Get action by ID
+      parameters:
+        - $ref: "#/components/parameters/ActionId"
+      responses:
+        "200":
+          description: Action retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Action"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    patch:
+      tags: [Actions]
+      summary: Update action status
+      parameters:
+        - $ref: "#/components/parameters/ActionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateActionRequest"
+      responses:
+        "200":
+          description: Action updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Action"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [Actions]
+      summary: Delete an action
+      parameters:
+        - $ref: "#/components/parameters/ActionId"
+      responses:
+        "204":
+          description: Action deleted successfully
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # Approvals
+  /approvals:
+    get:
+      tags: [Approvals]
+      summary: Get pending approvals
+      responses:
+        "200":
+          description: Approvals retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Action"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /approvals/{actionId}/approve:
+    post:
+      tags: [Approvals]
+      summary: Approve an action
+      parameters:
+        - $ref: "#/components/parameters/ActionId"
+      responses:
+        "200":
+          description: Action approved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Action"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Action is not in pending status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /approvals/{actionId}/reject:
+    post:
+      tags: [Approvals]
+      summary: Reject an action
+      parameters:
+        - $ref: "#/components/parameters/ActionId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for rejection
+      responses:
+        "200":
+          description: Action rejected successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Action"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Action is not in pending status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # Integrations
+  /integrations:
+    get:
+      tags: [Integrations]
+      summary: Get all integrations for current user
+      responses:
+        "200":
+          description: Integrations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Integration"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /integrations/{type}:
+    get:
+      tags: [Integrations]
+      summary: Get integration by type
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/IntegrationType"
+      responses:
+        "200":
+          description: Integration retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Integration"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [Integrations]
+      summary: Disconnect integration
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/IntegrationType"
+      responses:
+        "204":
+          description: Integration disconnected successfully
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # Emails
+  /emails:
+    get:
+      tags: [Emails]
+      summary: Get emails from Gmail
+      parameters:
+        - name: maxResults
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: pageToken
+          in: query
+          schema:
+            type: string
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Gmail search query
+      responses:
+        "200":
+          description: Emails retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Gmail not connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /emails/{emailId}:
+    get:
+      tags: [Emails]
+      summary: Get email by ID
+      parameters:
+        - name: emailId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Email retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Email"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Gmail not connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /emails/send:
+    post:
+      tags: [Emails]
+      summary: Send an email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendEmailRequest"
+      responses:
+        "200":
+          description: Email sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messageId:
+                    type: string
+                  threadId:
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Gmail not connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /emails/draft:
+    post:
+      tags: [Emails]
+      summary: AI-generate email draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DraftEmailRequest"
+      responses:
+        "200":
+          description: Draft generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailDraft"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # Banking
+  /banking/link-token:
+    post:
+      tags: [Banking]
+      summary: Create Plaid link token
+      responses:
+        "200":
+          description: Link token created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  linkToken:
+                    type: string
+                  expiration:
+                    type: string
+                    format: date-time
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /banking/exchange-token:
+    post:
+      tags: [Banking]
+      summary: Exchange public token for access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - publicToken
+              properties:
+                publicToken:
+                  type: string
+      responses:
+        "200":
+          description: Token exchanged successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /banking/accounts:
+    get:
+      tags: [Banking]
+      summary: Get linked bank accounts
+      responses:
+        "200":
+          description: Accounts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BankAccount"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Banking not connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /banking/transactions:
+    get:
+      tags: [Banking]
+      summary: Get transactions
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: accountId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Banking not connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # Food
+  /food/meals:
+    get:
+      tags: [Food]
+      summary: Get meal plans
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Meals retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Meal"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Food]
+      summary: Create meal plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMealRequest"
+      responses:
+        "201":
+          description: Meal created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Meal"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /food/grocery-lists:
+    get:
+      tags: [Food]
+      summary: Get grocery lists
+      responses:
+        "200":
+          description: Grocery lists retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GroceryList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Food]
+      summary: Create grocery list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGroceryListRequest"
+      responses:
+        "201":
+          description: Grocery list created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroceryList"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # Life
+  /life/tasks:
+    get:
+      tags: [Life]
+      summary: Get tasks
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, completed, cancelled]
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high, urgent]
+      responses:
+        "200":
+          description: Tasks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Life]
+      summary: Create task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskRequest"
+      responses:
+        "201":
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /life/reminders:
+    get:
+      tags: [Life]
+      summary: Get reminders
+      responses:
+        "200":
+          description: Reminders retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Reminder"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Life]
+      summary: Create reminder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReminderRequest"
+      responses:
+        "201":
+          description: Reminder created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reminder"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # Chat
+  /chat/conversations:
+    get:
+      tags: [Chat]
+      summary: Get all conversations
+      responses:
+        "200":
+          description: Conversations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Conversation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Chat]
+      summary: Create new conversation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+      responses:
+        "201":
+          description: Conversation created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /chat/conversations/{conversationId}:
+    get:
+      tags: [Chat]
+      summary: Get conversation with messages
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Conversation retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationWithMessages"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /chat/conversations/{conversationId}/messages:
+    post:
+      tags: [Chat]
+      summary: Send message to conversation
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 10000
+      responses:
+        "200":
+          description: Message sent and AI response received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userMessage:
+                    $ref: "#/components/schemas/Message"
+                  assistantMessage:
+                    $ref: "#/components/schemas/Message"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # AI
+  /ai/suggest:
+    post:
+      tags: [AI]
+      summary: Get AI suggestions based on context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - context
+              properties:
+                context:
+                  type: string
+                type:
+                  type: string
+                  enum: [action, email, task, general]
+      responses:
+        "200":
+          description: Suggestions generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Suggestion"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # Calendar
+  /calendar/events:
+    get:
+      tags: [Calendar]
+      summary: Get calendar events
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: maxResults
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Events retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CalendarEvent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Calendar not connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [Calendar]
+      summary: Create calendar event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCalendarEventRequest"
+      responses:
+        "201":
+          description: Event created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarEvent"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Calendar not connected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # Calls
+  /calls:
+    get:
+      tags: [Calls]
+      summary: Get call history
+      responses:
+        "200":
+          description: Calls retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Call"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /calls/{callId}:
+    get:
+      tags: [Calls]
+      summary: Get call by ID
+      parameters:
+        - name: callId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Call retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Call"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: AWS Cognito JWT token
+
+  parameters:
+    ActionId:
+      name: actionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            message: "Validation error"
+            details: "Field 'title' is required"
+
+    Unauthorized:
+      description: Authentication required or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            message: "Unauthorized"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            message: "Resource not found"
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            message: "Internal server error"
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+        details:
+          type: string
+        code:
+          type: string
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+
+    User:
+      type: object
+      required:
+        - userId
+        - email
+        - createdAt
+      properties:
+        userId:
+          type: string
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        settings:
+          $ref: "#/components/schemas/UserSettings"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          maxLength: 100
+        lastName:
+          type: string
+          maxLength: 100
+        phone:
+          type: string
+
+    UserSettings:
+      type: object
+      properties:
+        notifications:
+          type: object
+          properties:
+            email:
+              type: boolean
+            push:
+              type: boolean
+            sms:
+              type: boolean
+        approvalModes:
+          type: object
+          properties:
+            email:
+              type: string
+              enum: [auto, suggest, manual]
+            call:
+              type: string
+              enum: [auto, suggest, manual]
+            payment:
+              type: string
+              enum: [auto, suggest, manual]
+            food:
+              type: string
+              enum: [auto, suggest, manual]
+        spendingLimits:
+          type: object
+          properties:
+            perTransaction:
+              type: number
+            daily:
+              type: number
+            monthly:
+              type: number
+        theme:
+          type: string
+          enum: [light, dark, system]
+
+    ActionType:
+      type: string
+      enum: [email, call, payment, food, appointment, other]
+
+    ActionStatus:
+      type: string
+      enum: [pending, approved, rejected, completed, failed]
+
+    Action:
+      type: object
+      required:
+        - actionId
+        - userId
+        - type
+        - status
+        - title
+        - createdAt
+      properties:
+        actionId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+        type:
+          $ref: "#/components/schemas/ActionType"
+        status:
+          $ref: "#/components/schemas/ActionStatus"
+        title:
+          type: string
+        description:
+          type: string
+        details:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        metadata:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+
+    PaginatedActions:
+      type: object
+      properties:
+        actions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Action"
+        lastEvaluatedKey:
+          type: object
+
+    CreateActionRequest:
+      type: object
+      required:
+        - type
+        - title
+        - description
+      properties:
+        type:
+          $ref: "#/components/schemas/ActionType"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+        details:
+          type: string
+        amount:
+          type: number
+          minimum: 0
+        currency:
+          type: string
+        metadata:
+          type: object
+
+    UpdateActionRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: "#/components/schemas/ActionStatus"
+
+    IntegrationType:
+      type: string
+      enum: [gmail, plaid, google_calendar]
+
+    Integration:
+      type: object
+      required:
+        - integrationId
+        - userId
+        - type
+        - status
+      properties:
+        integrationId:
+          type: string
+        userId:
+          type: string
+        type:
+          $ref: "#/components/schemas/IntegrationType"
+        status:
+          type: string
+          enum: [connected, disconnected, expired]
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    EmailList:
+      type: object
+      properties:
+        emails:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmailSummary"
+        nextPageToken:
+          type: string
+
+    EmailSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        threadId:
+          type: string
+        from:
+          type: string
+        to:
+          type: string
+        subject:
+          type: string
+        snippet:
+          type: string
+        date:
+          type: string
+          format: date-time
+        isRead:
+          type: boolean
+
+    Email:
+      type: object
+      properties:
+        id:
+          type: string
+        threadId:
+          type: string
+        from:
+          type: string
+        to:
+          type: string
+        cc:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        date:
+          type: string
+          format: date-time
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              filename:
+                type: string
+              mimeType:
+                type: string
+              size:
+                type: integer
+
+    SendEmailRequest:
+      type: object
+      required:
+        - to
+        - subject
+        - body
+      properties:
+        to:
+          type: string
+          format: email
+        cc:
+          type: string
+        bcc:
+          type: string
+        subject:
+          type: string
+          maxLength: 500
+        body:
+          type: string
+          maxLength: 50000
+        replyTo:
+          type: string
+
+    DraftEmailRequest:
+      type: object
+      required:
+        - prompt
+      properties:
+        prompt:
+          type: string
+          description: Description of what the email should say
+        to:
+          type: string
+        context:
+          type: string
+          description: Additional context for the AI
+
+    EmailDraft:
+      type: object
+      properties:
+        subject:
+          type: string
+        body:
+          type: string
+        suggestions:
+          type: array
+          items:
+            type: string
+
+    BankAccount:
+      type: object
+      properties:
+        accountId:
+          type: string
+        name:
+          type: string
+        officialName:
+          type: string
+        type:
+          type: string
+        subtype:
+          type: string
+        mask:
+          type: string
+        currentBalance:
+          type: number
+        availableBalance:
+          type: number
+        currency:
+          type: string
+
+    Transaction:
+      type: object
+      properties:
+        transactionId:
+          type: string
+        accountId:
+          type: string
+        amount:
+          type: number
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+        merchantName:
+          type: string
+        category:
+          type: array
+          items:
+            type: string
+        pending:
+          type: boolean
+
+    Meal:
+      type: object
+      properties:
+        mealId:
+          type: string
+        userId:
+          type: string
+        date:
+          type: string
+          format: date
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        name:
+          type: string
+        recipe:
+          type: string
+        ingredients:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateMealRequest:
+      type: object
+      required:
+        - date
+        - mealType
+        - name
+      properties:
+        date:
+          type: string
+          format: date
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        name:
+          type: string
+        recipe:
+          type: string
+        ingredients:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+
+    GroceryList:
+      type: object
+      properties:
+        listId:
+          type: string
+        userId:
+          type: string
+        name:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              quantity:
+                type: string
+              checked:
+                type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateGroceryListRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              quantity:
+                type: string
+
+    Task:
+      type: object
+      properties:
+        taskId:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [pending, completed, cancelled]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        dueDate:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateTaskRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        dueDate:
+          type: string
+          format: date-time
+
+    Reminder:
+      type: object
+      properties:
+        reminderId:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        reminderTime:
+          type: string
+          format: date-time
+        recurring:
+          type: string
+          enum: [none, daily, weekly, monthly]
+        status:
+          type: string
+          enum: [active, completed, cancelled]
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateReminderRequest:
+      type: object
+      required:
+        - title
+        - reminderTime
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        reminderTime:
+          type: string
+          format: date-time
+        recurring:
+          type: string
+          enum: [none, daily, weekly, monthly]
+
+    Conversation:
+      type: object
+      properties:
+        conversationId:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        messageCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ConversationWithMessages:
+      type: object
+      properties:
+        conversationId:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        createdAt:
+          type: string
+          format: date-time
+
+    Message:
+      type: object
+      properties:
+        messageId:
+          type: string
+        conversationId:
+          type: string
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Suggestion:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        action:
+          type: object
+
+    CalendarEvent:
+      type: object
+      properties:
+        eventId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        location:
+          type: string
+        attendees:
+          type: array
+          items:
+            type: string
+        isAllDay:
+          type: boolean
+
+    CreateCalendarEventRequest:
+      type: object
+      required:
+        - title
+        - start
+        - end
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        location:
+          type: string
+        attendees:
+          type: array
+          items:
+            type: string
+
+    Call:
+      type: object
+      properties:
+        callId:
+          type: string
+        userId:
+          type: string
+        direction:
+          type: string
+          enum: [inbound, outbound]
+        status:
+          type: string
+          enum: [initiated, ringing, answered, completed, missed, failed]
+        phoneNumber:
+          type: string
+        duration:
+          type: integer
+          description: Duration in seconds
+        transcript:
+          type: string
+        summary:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
